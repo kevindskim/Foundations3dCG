@@ -538,10 +538,11 @@ static void loadTexture(GLuint texHandle, const char *ppmFilename) {
 
   ppmRead(ppmFilename, texWidth, texHeight, pixData);
 
-  glActiveTexture(GL_TEXTURE0 + texHandle);
-  glBindTexture(GL_TEXTURE_2D, texHandle);
-  glTexImage2D(GL_TEXTURE_2D, 0, g_Gl2Compatible ? GL_RGB : GL_SRGB, texWidth, texHeight,
-               0, GL_RGB, GL_UNSIGNED_BYTE, &pixData[0]);
+  GLCall(glActiveTexture(GL_TEXTURE0 + texHandle));
+  GLCall(glBindTexture(GL_TEXTURE_2D, texHandle));
+  GLCall(glTexImage2D(GL_TEXTURE_2D, 0, g_Gl2Compatible ? GL_RGB : GL_SRGB, texWidth, texHeight,
+               0, GL_RGB, GL_UNSIGNED_BYTE, &pixData[0]));
+  /* glTexParameteri should be called after glTexImage2D */
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
