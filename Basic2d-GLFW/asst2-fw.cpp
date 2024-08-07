@@ -19,6 +19,9 @@
 #endif
 
 #include <GL/glew.h>
+
+#include <GLFW/glfw3.h>  // GLFW helper library
+
 #ifdef __MAC__
 #   define IS_MAC true
 #   include <GLUT/glut.h>
@@ -28,7 +31,7 @@
 #endif
 
 #include "ppm.h"
-#include "glsupport.h"
+#include "glsupport-fw.h"
 
  // added by ds to fix compile error C4996
 #pragma warning(disable : 4996)
@@ -124,13 +127,11 @@ static void drawSquare() {
   glUseProgram(g_squareShaderState->program);
 
   /* Bind textures */
-  // Activate the texture unit first before binding texture
-
+  // Activate the texture unit 0 and binding texture of g_tex0
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, g_tex0->getHandle());
 
-  // Activate the texture unit second before binding texture
-  
+  // Activate the texture unit 1 and binding texture of g_tex1
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D, g_tex1->getHandle());
 
@@ -138,8 +139,8 @@ static void drawSquare() {
   float scaleCoefficient = min(g_width / g_initialWidth, g_height / g_initialHeight);
 
   /* Set glsl uniform variables */
-  safe_glUniform1i(g_squareShaderState->h_uTex0, 0); /* 0 means GL_TEXTURE0 */
-  safe_glUniform1i(g_squareShaderState->h_uTex1, 1); /* 1 means GL_TEXTURE1 */
+  safe_glUniform1i(g_squareShaderState->h_uTex0, 0); /* 0 meams GL_TEXTURE0 */
+  safe_glUniform1i(g_squareShaderState->h_uTex1, 1); /* 1 meams GL_TEXTURE1 */
   safe_glUniform1f(g_squareShaderState->h_uVertexScale, g_objScale);
   safe_glUniform1f(g_squareShaderState->h_uXCoefficient, g_initialWidth / g_width * scaleCoefficient);
   safe_glUniform1f(g_squareShaderState->h_uYCoefficient, g_initialHeight / g_height * scaleCoefficient);
@@ -173,7 +174,7 @@ static void drawTriangle() {
   glUseProgram(g_triangleShaderState->program);
 
   /* Bind textures */
-  // Activate the texture unit third before binding texture
+  // Activate the texture unit 2 and binding texture of g_tex2
   glActiveTexture(GL_TEXTURE2);
   glBindTexture(GL_TEXTURE_2D, g_tex2->getHandle());
 
@@ -181,7 +182,7 @@ static void drawTriangle() {
   float scaleCoefficient = min(g_width / g_initialWidth, g_height / g_initialHeight);
 
   /* Set glsl uniform variables */
-  safe_glUniform1i(g_triangleShaderState->h_uTex2, 2); /* 2 means GL_TEXTURE2  */
+  safe_glUniform1i(g_triangleShaderState->h_uTex2, 2); /* 2 meams GL_TEXTURE2 */
   safe_glUniform1f(g_triangleShaderState->h_uXCoefficient, g_initialWidth / g_width * scaleCoefficient);
   safe_glUniform1f(g_triangleShaderState->h_uYCoefficient, g_initialHeight / g_height * scaleCoefficient);
 
@@ -535,7 +536,6 @@ static void loadTexture(GLuint texHandle, const char *ppmFilename) {
 
   ppmRead(ppmFilename, texWidth, texHeight, pixData);
 
-  // GLCall(glActiveTexture(GL_TEXTURE0));   // 이 줄은 필요 없음. glGenTexutures(1, &texHandle)에서 이미 활성화 됨
   GLCall(glBindTexture(GL_TEXTURE_2D, texHandle));
   GLCall(glTexImage2D(GL_TEXTURE_2D, 0, g_Gl2Compatible ? GL_RGB : GL_SRGB, texWidth, texHeight,
                0, GL_RGB, GL_UNSIGNED_BYTE, &pixData[0]));
@@ -567,15 +567,10 @@ static void initTextures() {
  */
 int main(int argc, char **argv) {
   try {
+    
     initGlutState(argc,argv);
 
     glewInit(); // load the OpenGL extensions
-
-    cout << (g_Gl2Compatible ? "Will use OpenGL 2.x / GLSL 1.0" : "Will use OpenGL 3.x / GLSL 1.3") << endl;
-    if ((!g_Gl2Compatible) && !GLEW_VERSION_3_0)
-      throw runtime_error("Error: card/driver does not support OpenGL Shading Language v1.3");
-    else if (g_Gl2Compatible && !GLEW_VERSION_2_0)
-      throw runtime_error("Error: card/driver does not support OpenGL Shading Language v1.0");
 
     initGLState();
     initShaders();
