@@ -114,6 +114,7 @@ static shared_ptr<GlTexture> g_tex0, g_tex1, g_tex2;
 /** Global geometries to draw a triangle with indecies */ 
 struct GeometryPX {
   GlBufferObject posVbo, texVbo, colorVbo, indexVbo;
+  GlVertexArrayObject VAO; // VAO is vertex array object
 };
 
 static shared_ptr<GeometryPX> g_square;
@@ -129,11 +130,11 @@ static void drawSquare() {
   /* Bind textures */
   // Activate the texture unit 0 and binding texture of g_tex0
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, g_tex0->getHandle());
+  glBindTexture(GL_TEXTURE_2D, *g_tex0);
 
   // Activate the texture unit 1 and binding texture of g_tex1
   glActiveTexture(GL_TEXTURE1);
-  glBindTexture(GL_TEXTURE_2D, g_tex1->getHandle());
+  glBindTexture(GL_TEXTURE_2D, *g_tex1);
 
   /* Compute coefficients for maintaining aspect ratio */
   float scaleCoefficient = min(g_width / g_initialWidth, g_height / g_initialHeight);
@@ -146,7 +147,10 @@ static void drawSquare() {
   safe_glUniform1f(g_squareShaderState->h_uYCoefficient, g_initialHeight / g_height * scaleCoefficient);
 
   /* Bind vertex buffers */
-  glBindBuffer(GL_ARRAY_BUFFER, g_square->posVbo);
+  GLCall(glBindVertexArray(g_square->VAO));  // VAO is vertex array object added by DS August 8, 2024
+
+  GLCall(glBindBuffer(GL_ARRAY_BUFFER, g_square->posVbo));
+
   safe_glVertexAttribPointer(g_squareShaderState->h_aPosition,
                              2, GL_FLOAT, GL_FALSE, 0, 0);
 
@@ -176,7 +180,7 @@ static void drawTriangle() {
   /* Bind textures */
   // Activate the texture unit 2 and binding texture of g_tex2
   glActiveTexture(GL_TEXTURE2);
-  glBindTexture(GL_TEXTURE_2D, g_tex2->getHandle());
+  glBindTexture(GL_TEXTURE_2D, *g_tex2);
 
   /* Compute coefficients for maintaining aspect ratio */
   float scaleCoefficient = min(g_width / g_initialWidth, g_height / g_initialHeight);
@@ -191,6 +195,9 @@ static void drawTriangle() {
   safe_glUniform1f(g_triangleShaderState->h_uYOffset, g_yOffset * .05);
 
   /* Bind vertex buffers */
+
+  GLCall(glBindVertexArray(g_triangle->VAO));  // VAO is vertex array object added by DS August 8, 2024
+
   glBindBuffer(GL_ARRAY_BUFFER, g_triangle->posVbo);
 
   safe_glVertexAttribPointer(g_triangleShaderState->h_aPosition,
@@ -228,141 +235,75 @@ static void drawTriangle() {
  * scene. We specify that this is the correct function to call with the
  * glutDisplayFunc() function during initialization.
  */
-static void display(void) {
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+static void display(GLFWwindow* window) {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  drawSquare();
-  drawTriangle();
+    drawSquare();
+    drawTriangle();
 
-  glutSwapBuffers();
+    glfwSwapBuffers(window);
 
   /* check for errors */
   checkGlErrors();
 }
 
 
-/**
- * Reshape
- *
- * Whenever a window is resized, a "resize" event is generated and glut is told
- * to call this reshape callback function to handle it appropriately.
- */
-static void reshape(int w, int h) {
-  g_width = w;
-  g_height = h;
-  glViewport(0, 0, w, h);
-  glutPostRedisplay();
-}
-
-
-/**
- * Mouse
- *
- * Whenever a mouse button is clicked, a "mouse" event is generated and this
- * mouse callback function is called to handle the user input.
- */
-
-static void mouse(int button, int state, int x, int y) {
-  if (button == GLUT_LEFT_BUTTON) {
-    if (state == GLUT_DOWN) {
-      /* right mouse button has been clicked */
-      g_leftClicked = true;
-      g_leftClickX = x;
-      g_leftClickY = g_height - y - 1;
-    }
-    else {
-      /* right mouse button has been released */
-      g_leftClicked = false;
-    }
-  }
-  if (button == GLUT_RIGHT_BUTTON) {
-    if (state == GLUT_DOWN) {
-      /* right mouse button has been clicked */
-      g_rightClicked = true;
-      g_rightClickX = x;
-      g_rightClickY = g_height - y - 1;
-    }
-    else {
-      /* right mouse button has been released */
-      g_rightClicked = false;
-    }
-  }
-}
-
-/**
- * Motion
- *
- * Whenever the mouse is moved while a button is pressed, a "mouse move" event
- * is triggered and this callback is called to handle the event.
- */
-static void motion(int x, int y) {
-  const int newx = x;
-  const int newy = g_height - y - 1;
-  if (g_leftClicked) {
-    g_leftClickX = newx;
-    g_leftClickY = newy;
-  }
-  if (g_rightClicked) {
-    float deltax = (newx - g_rightClickX) * 0.02;
-    g_objScale += deltax;
-
-    g_rightClickX = newx;
-    g_rightClickY = newy;
-  }
-  glutPostRedisplay();
-}
-
-static void keyboard(unsigned char key, int x, int y) {
-  switch (key) {
-  case 'h':
-    cout << " ============== H E L P ==============\n\n"
-    << "h\t\thelp menu\n"
-    << "s\t\tsave screenshot\n"
-    << "drag right mouse to change square size\n";
-    break;
-  case 'q':
-    exit(0);
-  case 'i':
-    g_yOffset++;
-    break;
-  case 'j':
-    g_xOffset--;
-    break;
-  case 'k':
-    g_yOffset--;
-    break;
-  case 'l':
-    g_xOffset++;
-    break;
-  case 's':
-    glFinish();
-    writePpmScreenshot(g_width, g_height, "out.ppm");
-    break;
-  }
-  glutPostRedisplay();
-}
-
 /* H E L P E R    F U N C T I O N S ***********************************/
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    g_width = width;
+    g_height = height;
+    glViewport(0, 0, width, height);
+}
 
-static void initGlutState(int argc, char **argv) {
-  glutInit(&argc,argv);
-  glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE|GLUT_DEPTH);
-  glutInitWindowSize(g_width, g_height);      /* create a window */
-  glutCreateWindow("CS 175: Hello World");    /* title the window */
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    // Handle keyboard input
+}
 
-  glutDisplayFunc(display);                   /* display rendering callback */
-  glutReshapeFunc(reshape);                   /* window reshape callback */
-  glutMotionFunc(motion);                     /* mouse movement callback */
-  glutMouseFunc(mouse);                       /* mouse click callback */
-  glutKeyboardFunc(keyboard);
+static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+    // Handle mouse input
+}
+
+static void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
+    // Handle cursor position
+}
+static void initGLFW(int argc, char** argv) {
+    if (!glfwInit()) {
+        throw std::runtime_error("Failed to initialize GLFW");
+    }
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    GLFWwindow* window = glfwCreateWindow(g_width, g_height, "CS 175: Hello World", NULL, NULL);
+    if (!window) {
+        glfwTerminate();
+        throw std::runtime_error("Failed to create GLFW window");
+    }
+    glfwMakeContextCurrent(window);
+
+    glfwSwapInterval(1); //1이면 vsync rate와 같은 속도로 화면 갱신
+
+    // glfwMakeContextCurrent가 호출된 후에 glewInit이 수행되어야 함
+    if (glewInit() != GLEW_OK)
+    {
+        std::cout << "Error\n";
+    }
+
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetCursorPosCallback(window, cursor_pos_callback);
+   
 }
 
 static void initGLState() {
-  glClearColor(128./255,200./255,1,0);
-  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-  glPixelStorei(GL_PACK_ALIGNMENT, 1);
-  if (!g_Gl2Compatible)
-    glEnable(GL_FRAMEBUFFER_SRGB);
+    glClearColor(128.0f / 255, 200.0f / 255, 1.0f, 0.0f);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    if (!g_Gl2Compatible) {
+        glEnable(GL_FRAMEBUFFER_SRGB);
+    }
 }
 
 static void loadSquareShader(SquareShaderState& ss) {
@@ -437,12 +378,15 @@ static void loadSquareGeometry(const GeometryPX& g) {
 
   GLuint indices[idim] = { 0, 2, 1, 0, 1, 3 };
 
-  glBindBuffer(GL_ARRAY_BUFFER, g.posVbo);
-  glBufferData(
+  /* Bind vertex buffers */
+  GLCall(glBindVertexArray(g.VAO));   // VAO is vertex array object added by DS August 8, 2024
+
+  GLCall(glBindBuffer(GL_ARRAY_BUFFER, g.posVbo));
+  GLCall(glBufferData(
     GL_ARRAY_BUFFER,
     2*vdim*sizeof(GLfloat),
     pos,
-    GL_STATIC_DRAW);
+    GL_STATIC_DRAW));
   checkGlErrors();
 
   glBindBuffer(GL_ARRAY_BUFFER, g.texVbo);
@@ -459,6 +403,7 @@ static void loadSquareGeometry(const GeometryPX& g) {
 	  idim * sizeof(GLuint),
 	  indices,
 	  GL_STATIC_DRAW);
+  
   checkGlErrors();
 }
 
@@ -487,6 +432,8 @@ static void loadTriangleGeometry(const GeometryPX& g) {
   };
 
   GLuint indices[idim] = { 0, 2, 1};
+
+  GLCall(glBindVertexArray(g.VAO));   // VAO is vertex array object added by DS August 8, 2024
 
   glBindBuffer(GL_ARRAY_BUFFER, g.posVbo);
   glBufferData(
@@ -530,33 +477,35 @@ static void initGeometry() {
   loadTriangleGeometry(*g_triangle);
 }
 
-static void loadTexture(GLuint texHandle, const char *ppmFilename) {
-  int texWidth, texHeight;
-  vector<PackedPixel> pixData;
+static void loadTexture(GLuint texHandle, const char* ppmFilename) {
+    int texWidth, texHeight;
+    vector<PackedPixel> pixData;
 
-  ppmRead(ppmFilename, texWidth, texHeight, pixData);
+    ppmRead(ppmFilename, texWidth, texHeight, pixData);
 
-  GLCall(glBindTexture(GL_TEXTURE_2D, texHandle));
-  GLCall(glTexImage2D(GL_TEXTURE_2D, 0, g_Gl2Compatible ? GL_RGB : GL_SRGB, texWidth, texHeight,
-               0, GL_RGB, GL_UNSIGNED_BYTE, &pixData[0]));
-  /* glTexParameteri should be called after glTexImage2D */
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    // GLCall(glActiveTexture(GL_TEXTURE0));
+    GLCall(glBindTexture(GL_TEXTURE_2D, texHandle));
+    GLCall(glTexImage2D(GL_TEXTURE_2D, 0, g_Gl2Compatible ? GL_RGB : GL_SRGB, texWidth, texHeight,
+        0, GL_RGB, GL_UNSIGNED_BYTE, &pixData[0]));
 
-  checkGlErrors();
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    GLCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+
+    checkGlErrors();
 }
 
 static void initTextures() {
-  g_tex0.reset(new GlTexture());
-  g_tex1.reset(new GlTexture());
-  g_tex2.reset(new GlTexture());
+    g_tex0.reset(new GlTexture());
+    g_tex1.reset(new GlTexture());
+    g_tex2.reset(new GlTexture());
 
-  loadTexture(g_tex0->getHandle(), "smiley.ppm");
-  loadTexture(g_tex1->getHandle(), "reachup.ppm");
-  loadTexture(g_tex2->getHandle(), "shield.ppm");
+    loadTexture(*g_tex0, "smiley.ppm");
+    loadTexture(*g_tex1, "reachup.ppm");
+    loadTexture(*g_tex2, "shield.ppm");
 }
+
 
 /* M A I N ************************************************************/
 
@@ -565,23 +514,34 @@ static void initTextures() {
  *
  * The main entry-point for the HelloWorld example application.
  */
-int main(int argc, char **argv) {
-  try {
-    
-    initGlutState(argc,argv);
+int main(int argc, char** argv) {
+    try {
+        initGLFW(argc, argv);
 
-    glewInit(); // load the OpenGL extensions
+        glewInit(); // load the OpenGL extensions
 
-    initGLState();
-    initShaders();
-    initGeometry();
-    initTextures();
+        initGLState();
+        initShaders();
+        initGeometry();
+        initTextures();
 
-    glutMainLoop();
-    return 0;
-  }
-  catch (const runtime_error& e) {
-    cout << "Exception caught: " << e.what() << endl;
-    return -1;
-  }
+        GLFWwindow* window = glfwGetCurrentContext();
+        while (!glfwWindowShouldClose(window)) {
+
+
+            display(window);
+
+            glfwPollEvents();
+        }
+
+        glfwDestroyWindow(window);
+        glfwTerminate();
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
+
