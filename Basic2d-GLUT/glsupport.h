@@ -137,6 +137,28 @@ public:
     }
 };
 
+// Light wrapper around a GL Vertex Array object handle that automatically allocates
+// and deallocates. Can be casted to a GLuint.
+class GlVertexArrayObject : Noncopyable {
+protected:
+    GLuint handle_;
+
+public:
+    GlVertexArrayObject() {
+        GLCall(glGenVertexArrays(1, &handle_));
+        checkGlErrors();
+    }
+
+    ~GlVertexArrayObject() {
+        glDeleteVertexArrays(1, &handle_);
+    }
+
+    // Casts to GLuint so can be used directly glBindBuffer and so on
+    operator GLuint() const {
+        return handle_;
+    }
+};
+
 
 // Light wrapper around a GL buffer object handle that automatically allocates
 // and deallocates. Can be casted to a GLuint.

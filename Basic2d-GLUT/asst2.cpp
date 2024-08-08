@@ -110,7 +110,8 @@ static shared_ptr<GlTexture> g_tex0, g_tex1, g_tex2;
 
 /** Global geometries to draw a triangle with indecies */ 
 struct GeometryPX {
-  GlBufferObject posVbo, texVbo, colorVbo, indexVbo;
+    GlBufferObject posVbo, texVbo, colorVbo, indexVbo;
+    GlVertexArrayObject VAO; // VAO is vertex array object
 };
 
 static shared_ptr<GeometryPX> g_square;
@@ -145,6 +146,8 @@ static void drawSquare() {
   safe_glUniform1f(g_squareShaderState->h_uYCoefficient, g_initialHeight / g_height * scaleCoefficient);
 
   /* Bind vertex buffers */
+  GLCall(glBindVertexArray(g_square->VAO));  // VAO is vertex array object added by DS August 8, 2024
+
   glBindBuffer(GL_ARRAY_BUFFER, g_square->posVbo);
   safe_glVertexAttribPointer(g_squareShaderState->h_aPosition,
                              2, GL_FLOAT, GL_FALSE, 0, 0);
@@ -190,6 +193,8 @@ static void drawTriangle() {
   safe_glUniform1f(g_triangleShaderState->h_uYOffset, g_yOffset * .05);
 
   /* Bind vertex buffers */
+  GLCall(glBindVertexArray(g_triangle->VAO));  // VAO is vertex array object added by DS August 8, 2024
+
   glBindBuffer(GL_ARRAY_BUFFER, g_triangle->posVbo);
 
   safe_glVertexAttribPointer(g_triangleShaderState->h_aPosition,
@@ -436,6 +441,8 @@ static void loadSquareGeometry(const GeometryPX& g) {
 
   GLuint indices[idim] = { 0, 2, 1, 0, 1, 3 };
 
+  GLCall(glBindVertexArray(g.VAO));   // VAO is vertex array object added by DS August 8, 2024
+
   glBindBuffer(GL_ARRAY_BUFFER, g.posVbo);
   glBufferData(
     GL_ARRAY_BUFFER,
@@ -486,6 +493,8 @@ static void loadTriangleGeometry(const GeometryPX& g) {
   };
 
   GLuint indices[idim] = { 0, 2, 1};
+
+  GLCall(glBindVertexArray(g.VAO));   // VAO is vertex array object added by DS August 8, 2024
 
   glBindBuffer(GL_ARRAY_BUFFER, g.posVbo);
   glBufferData(
