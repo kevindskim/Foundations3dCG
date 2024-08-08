@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="asst3-glut.cpp">
+    <ClCompile Include="asst3-glfw.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="glsupport3-glut.cpp">
+    <ClCompile Include="glsupport3-glfw.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="ppm.cpp">
@@ -29,7 +29,7 @@
     <ClInclude Include="cvec.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="glsupport3-glut.h">
+    <ClInclude Include="glsupport3-glfw.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="matrix4.h">

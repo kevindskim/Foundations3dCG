@@ -26,7 +26,7 @@
 #include "matrix4.h"
 #include "geometrymaker.h"
 #include "ppm.h"
-#include "glsupport.h"
+#include "glsupport3-glut.h"
 
 
 using namespace std;      // for string, vector, iostream, and other standard C++ stuff

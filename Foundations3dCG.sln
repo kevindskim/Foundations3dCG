@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Basic2d-GLFW", "Basic2d-GLF
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Basic3d-GLUT", "Basic3d-GLUT\Basic3d-GLUT.vcxproj", "{F110DDE8-36FC-4DB9-B15A-D87F9E0DE99E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Basic3d-GLFW", "Basic3d-GLFW\Basic3d-GLFW.vcxproj", "{1301C7AC-5AD6-43D7-BD5B-40D7A3CEA1FD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,14 @@ Global
 		{F110DDE8-36FC-4DB9-B15A-D87F9E0DE99E}.Release|x64.Build.0 = Release|x64
 		{F110DDE8-36FC-4DB9-B15A-D87F9E0DE99E}.Release|x86.ActiveCfg = Release|Win32
 		{F110DDE8-36FC-4DB9-B15A-D87F9E0DE99E}.Release|x86.Build.0 = Release|Win32
+		{1301C7AC-5AD6-43D7-BD5B-40D7A3CEA1FD}.Debug|x64.ActiveCfg = Debug|x64
+		{1301C7AC-5AD6-43D7-BD5B-40D7A3CEA1FD}.Debug|x64.Build.0 = Debug|x64
+		{1301C7AC-5AD6-43D7-BD5B-40D7A3CEA1FD}.Debug|x86.ActiveCfg = Debug|Win32
+		{1301C7AC-5AD6-43D7-BD5B-40D7A3CEA1FD}.Debug|x86.Build.0 = Debug|Win32
+		{1301C7AC-5AD6-43D7-BD5B-40D7A3CEA1FD}.Release|x64.ActiveCfg = Release|x64
+		{1301C7AC-5AD6-43D7-BD5B-40D7A3CEA1FD}.Release|x64.Build.0 = Release|x64
+		{1301C7AC-5AD6-43D7-BD5B-40D7A3CEA1FD}.Release|x86.ActiveCfg = Release|Win32
+		{1301C7AC-5AD6-43D7-BD5B-40D7A3CEA1FD}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
