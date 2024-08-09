@@ -148,10 +148,14 @@ struct Geometry {
   GlBufferObject vbo, ibo;
   int vboLen, iboLen;
 
+  GlVertexArrayObject vao; // vao is vertex array object
+
   Geometry(VertexPN *vtx, unsigned short *idx, int vboLen, int iboLen) {
     this->vboLen = vboLen;
     this->iboLen = iboLen;
-
+	// Now create the VAO and bind the VBO and IBO to it
+	glBindVertexArray(vao);
+     
     // Now create the VBO and IBO
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(VertexPN) * vboLen, vtx, GL_STATIC_DRAW);

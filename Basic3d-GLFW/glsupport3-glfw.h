@@ -11,6 +11,15 @@
 #include <GL/glut.h>
 #endif
 
+// Macro to check for OpenGL errors
+#define ASSERT(x) if (!(x)) { __debugbreak(); }
+#define GLCall(x) GLClearError();\
+				  x;\
+				  ASSERT(GLLogCall(#x, __FILE__, __LINE__))
+
+void GLClearError();
+bool GLLogCall(const char* function, const char* file, int line);
+
 // Check if there has been an error inside OpenGL and if yes, print the error and
 // through a runtime_error exception.
 void checkGlErrors();
@@ -129,6 +138,28 @@ public:
   operator GLuint() const {
     return handle_;
   }
+};
+
+// Light wrapper around a GL Vertex Array object handle that automatically allocates
+// and deallocates. Can be casted to a GLuint.
+class GlVertexArrayObject : Noncopyable {
+protected:
+    GLuint handle_;
+
+public:
+    GlVertexArrayObject() {
+        GLCall(glGenVertexArrays(1, &handle_));
+        checkGlErrors();
+    }
+
+    ~GlVertexArrayObject() {
+        glDeleteVertexArrays(1, &handle_);
+    }
+
+    // Casts to GLuint so can be used directly glBindBuffer and so on
+    operator GLuint() const {
+        return handle_;
+    }
 };
 
 
