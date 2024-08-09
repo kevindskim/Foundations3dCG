@@ -353,14 +353,11 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
 	double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
 
-	g_xpos = xpos;
-	g_ypos = ypos;
-    
     // Convert y coordinate to OpenGL's coordinate system
-    double convertedY = g_windowHeight - g_ypos - 1;
+    double convertedY = g_windowHeight - ypos - 1;
 
     // Update mouse click positions
-    g_mouseClickX = g_xpos;
+    g_mouseClickX = xpos;
     g_mouseClickY = convertedY;
 
     // Update button states based on the current action
@@ -384,13 +381,13 @@ static void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
     const double dy = g_windowHeight - ypos - 1 - g_mouseClickY;
 
     Matrix4 m;
-    if (g_mouseLClickButton) {
+	if (g_mouseLClickButton) {       // 마우스 왼쪽 버튼 클릭 for rotation
         m = Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx);
     }
-    else if (g_mouseRClickButton) {
+	else if (g_mouseRClickButton) {  // 마우스 오른쪽 버튼 클릭 for translation in x-y plane
         m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
     }
-    else if (g_mouseMClickButton) {
+	else if (g_mouseMClickButton) {  // 마우스 가운데 버튼 클릭 for zooming in/out in z-axis
         m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
     }
 
@@ -398,12 +395,7 @@ static void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
         g_objectRbt[0] *= m; // Simply right-multiply is WRONG
     }
 
-	// cursor position 업데이트
-	g_xpos = xpos;
-	g_ypos = ypos;
-    
     // 마우스 클릭 좌표 업데이트
-
     g_mouseClickX = xpos;
     g_mouseClickY = g_windowHeight - ypos - 1;
 }
