@@ -16,6 +16,9 @@
 #endif
 
 #include <GL/glew.h>
+
+#include <GLFW/glfw3.h>  // GLFW helper library
+
 #ifdef __MAC__
 #include <GLUT/glut.h>
 #else
@@ -30,7 +33,7 @@
 
 
 using namespace std;      // for string, vector, iostream, and other standard C++ stuff
-using namespace tr1;      // for shared_ptr
+using namespace std::tr1;      // for shared_ptr
 
 // G L O B A L S ///////////////////////////////////////////////////
 
@@ -295,13 +298,13 @@ static void drawStuff() {
   g_cube->draw(curSS);
 }
 
-static void display() {
+static void display(GLFWwindow* window) {
   glUseProgram(g_shaderStates[g_activeShader]->program);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);                   // clear framebuffer color&depth
 
   drawStuff();
 
-  glutSwapBuffers();                                    // show the back buffer (where we rendered stuff)
+  glfwSwapBuffers(window);                                 // show the back buffer (where we rendered stuff)
 
   checkGlErrors();
 }
@@ -380,19 +383,58 @@ static void keyboard(const unsigned char key, const int x, const int y) {
   glutPostRedisplay();
 }
 
-static void initGlutState(int argc, char * argv[]) {
-  glutInit(&argc, argv);                                  // initialize Glut based on cmd-line args
-  glutInitDisplayMode(GLUT_RGBA|GLUT_DOUBLE|GLUT_DEPTH);  //  RGBA pixel channels and double buffering
-  glutInitWindowSize(g_windowWidth, g_windowHeight);      // create a window
-  glutCreateWindow("Assignment 2");                       // title the window
+//----------------------------------------------------------------
 
-  glutDisplayFunc(display);                               // display rendering callback
-  glutReshapeFunc(reshape);                               // window reshape callback
-  glutMotionFunc(motion);                                 // mouse movement callback
-  glutMouseFunc(mouse);                                   // mouse click callback
-  glutKeyboardFunc(keyboard);
+/* H E L P E R    F U N C T I O N S ***********************************/
+static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    g_windowWidth = width;
+    g_windowHeight = height;
+    glViewport(0, 0, width, height);
 }
 
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    // Handle keyboard input
+}
+
+static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+    // Handle mouse input
+}
+
+static void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
+    // Handle cursor position
+}
+static void initGLFW(int argc, char** argv) {
+    if (!glfwInit()) {
+        throw std::runtime_error("Failed to initialize GLFW");
+    }
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    GLFWwindow* window = glfwCreateWindow(g_windowWidth, g_windowHeight, "CS 175: Hello World", NULL, NULL);
+    if (!window) {
+        glfwTerminate();
+        throw std::runtime_error("Failed to create GLFW window");
+    }
+    glfwMakeContextCurrent(window);
+
+    glfwSwapInterval(1); //1이면 vsync rate와 같은 속도로 화면 갱신
+
+    // glfwMakeContextCurrent가 호출된 후에 glewInit이 수행되어야 함
+    if (glewInit() != GLEW_OK)
+    {
+        std::cout << "Error\n";
+    }
+
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetCursorPosCallback(window, cursor_pos_callback);
+
+}
+
+//----------------------------------------------------------------
 static void initGLState() {
   glClearColor(128./255., 200./255., 255./255., 0.);
   glClearDepth(0.);
@@ -422,27 +464,40 @@ static void initGeometry() {
   initCubes();
 }
 
-int main(int argc, char * argv[]) {
-  try {
-    initGlutState(argc,argv);
+/* M A I N ************************************************************/
 
-    glewInit(); // load the OpenGL extensions
+/**
+ * Main
+ *
+ * The main entry-point for the HelloWorld example application.
+ */
+int main(int argc, char** argv) {
+    try {
+        initGLFW(argc, argv);
 
-    cout << (g_Gl2Compatible ? "Will use OpenGL 2.x / GLSL 1.0" : "Will use OpenGL 3.x / GLSL 1.3") << endl;
-    if ((!g_Gl2Compatible) && !GLEW_VERSION_3_0)
-      throw runtime_error("Error: card/driver does not support OpenGL Shading Language v1.3");
-    else if (g_Gl2Compatible && !GLEW_VERSION_2_0)
-      throw runtime_error("Error: card/driver does not support OpenGL Shading Language v1.0");
+        glewInit(); // load the OpenGL extensions
 
-    initGLState();
-    initShaders();
-    initGeometry();
+        initGLState();
+        initShaders();
+        initGeometry();
+       // initTextures();
 
-    glutMainLoop();
-    return 0;
-  }
-  catch (const runtime_error& e) {
-    cout << "Exception caught: " << e.what() << endl;
-    return -1;
-  }
+        GLFWwindow* window = glfwGetCurrentContext();
+        while (!glfwWindowShouldClose(window)) {
+
+
+            display(window);
+
+            glfwPollEvents();
+        }
+
+        glfwDestroyWindow(window);
+        glfwTerminate();
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
 }
