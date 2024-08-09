@@ -336,7 +336,7 @@ static void motion(const int x, const int y) {
 }
 
 
-static void mouse(const int button, const int state, const int x, const int y) {
+static void mouse_origin(const int button, const int state, const int x, const int y) {
   g_mouseClickX = x;
   g_mouseClickY = g_windowHeight - y - 1;  // conversion from GLUT window-coordinate-system to OpenGL window-coordinate-system
 
@@ -349,6 +349,29 @@ static void mouse(const int button, const int state, const int x, const int y) {
   g_mouseMClickButton &= !(button == GLUT_MIDDLE_BUTTON && state == GLUT_UP);
 
   g_mouseClickDown = g_mouseLClickButton || g_mouseRClickButton || g_mouseMClickButton;
+}
+
+static void mouse(const int button, const int state, const int x, const int y) {
+    // Convert y coordinate to OpenGL's coordinate system
+    int convertedY = g_windowHeight - y - 1;
+
+    // Update mouse click positions
+    g_mouseClickX = x;
+    g_mouseClickY = convertedY;
+
+    // Update button states based on the current state
+    if (button == GLUT_LEFT_BUTTON) {
+        g_mouseLClickButton = (state == GLUT_DOWN);
+    }
+    else if (button == GLUT_RIGHT_BUTTON) {
+        g_mouseRClickButton = (state == GLUT_DOWN);
+    }
+    else if (button == GLUT_MIDDLE_BUTTON) {
+        g_mouseMClickButton = (state == GLUT_DOWN);
+    }
+
+    // Update mouse click down status
+    g_mouseClickDown = g_mouseLClickButton || g_mouseRClickButton || g_mouseMClickButton;
 }
 
 

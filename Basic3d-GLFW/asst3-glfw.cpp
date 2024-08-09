@@ -66,8 +66,10 @@ static const float g_groundSize = 10.0;   // half the ground length
 static int g_windowWidth = 512;
 static int g_windowHeight = 512;
 static bool g_mouseClickDown = false;    // is the mouse button pressed
-static bool g_mouseLClickButton, g_mouseRClickButton, g_mouseMClickButton;
+static bool g_mouseLClickButton = false, g_mouseRClickButton = false, g_mouseMClickButton = false;
 static int g_mouseClickX, g_mouseClickY; // coordinates for mouse click event
+static double g_xpos, g_ypos; // current mouse position
+
 static int g_activeShader = 0;
 
 struct ShaderState {
@@ -309,80 +311,6 @@ static void display(GLFWwindow* window) {
   checkGlErrors();
 }
 
-static void reshape(const int w, const int h) {
-  g_windowWidth = w;
-  g_windowHeight = h;
-  glViewport(0, 0, w, h);
-  cerr << "Size of window is now " << w << "x" << h << endl;
-  updateFrustFovY();
-  glutPostRedisplay();
-}
-
-static void motion(const int x, const int y) {
-  const double dx = x - g_mouseClickX;
-  const double dy = g_windowHeight - y - 1 - g_mouseClickY;
-
-  Matrix4 m;
-  if (g_mouseLClickButton && !g_mouseRClickButton) { // left button down?
-    m = Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx);
-  }
-  else if (g_mouseRClickButton && !g_mouseLClickButton) { // right button down?
-    m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
-  }
-  else if (g_mouseMClickButton || (g_mouseLClickButton && g_mouseRClickButton)) {  // middle or (left and right) button down?
-    m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
-  }
-
-  if (g_mouseClickDown) {
-    g_objectRbt[0] *= m; // Simply right-multiply is WRONG
-    glutPostRedisplay(); // we always redraw if we changed the scene
-  }
-
-  g_mouseClickX = x;
-  g_mouseClickY = g_windowHeight - y - 1;
-}
-
-
-static void mouse(const int button, const int state, const int x, const int y) {
-  g_mouseClickX = x;
-  g_mouseClickY = g_windowHeight - y - 1;  // conversion from GLUT window-coordinate-system to OpenGL window-coordinate-system
-
-  g_mouseLClickButton |= (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN);
-  g_mouseRClickButton |= (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN);
-  g_mouseMClickButton |= (button == GLUT_MIDDLE_BUTTON && state == GLUT_DOWN);
-
-  g_mouseLClickButton &= !(button == GLUT_LEFT_BUTTON && state == GLUT_UP);
-  g_mouseRClickButton &= !(button == GLUT_RIGHT_BUTTON && state == GLUT_UP);
-  g_mouseMClickButton &= !(button == GLUT_MIDDLE_BUTTON && state == GLUT_UP);
-
-  g_mouseClickDown = g_mouseLClickButton || g_mouseRClickButton || g_mouseMClickButton;
-}
-
-
-static void keyboard(const unsigned char key, const int x, const int y) {
-  switch (key) {
-  case 27:
-    exit(0);                                  // ESC
-  case 'h':
-    cout << " ============== H E L P ==============\n\n"
-    << "h\t\thelp menu\n"
-    << "s\t\tsave screenshot\n"
-    << "f\t\tToggle flat shading on/off.\n"
-    << "o\t\tCycle object to edit\n"
-    << "v\t\tCycle view\n"
-    << "drag left mouse to rotate\n" << endl;
-    break;
-  case 's':
-    glFlush();
-    writePpmScreenshot(g_windowWidth, g_windowHeight, "out.ppm");
-    break;
-  case 'f':
-    g_activeShader ^= 1;
-    break;
-  }
-  glutPostRedisplay();
-}
-
 //----------------------------------------------------------------
 
 /* H E L P E R    F U N C T I O N S ***********************************/
@@ -393,16 +321,94 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 }
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    // Handle keyboard input
+    if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+        switch (key) {
+        case GLFW_KEY_ESCAPE:
+            glfwSetWindowShouldClose(window, GL_TRUE);
+            break;
+        case GLFW_KEY_H:
+            std::cout << " ============== H E L P ==============\n\n"
+                << "h\t\thelp menu\n"
+                << "s\t\tsave screenshot\n"
+                << "f\t\tToggle flat shading on/off.\n"
+                << "o\t\tCycle object to edit\n"
+                << "v\t\tCycle view\n"
+                << "drag left mouse to rotate\n" << std::endl;
+            break;
+        case GLFW_KEY_S:
+            glFlush();
+            writePpmScreenshot(g_windowWidth, g_windowHeight, "out.ppm");
+            break;
+        case GLFW_KEY_F:
+            g_activeShader ^= 1;
+            break;
+        }
+        // 화면 갱신
+        glfwPostEmptyEvent();
+    }
 }
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
-    // Handle mouse input
+   
+	double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+
+	g_xpos = xpos;
+	g_ypos = ypos;
+    
+    // Convert y coordinate to OpenGL's coordinate system
+    double convertedY = g_windowHeight - g_ypos - 1;
+
+    // Update mouse click positions
+    g_mouseClickX = g_xpos;
+    g_mouseClickY = convertedY;
+
+    // Update button states based on the current action
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        g_mouseLClickButton = (action == GLFW_PRESS);
+    }
+    else if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+        g_mouseRClickButton = (action == GLFW_PRESS);
+    }
+    else if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+        g_mouseMClickButton = (action == GLFW_PRESS);
+    }
+
+    // 클릭이 내려간 상태인지 확인
+    g_mouseClickDown = g_mouseLClickButton || g_mouseRClickButton || g_mouseMClickButton;
 }
 
 static void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
-    // Handle cursor position
+    
+    const double dx = xpos - g_mouseClickX;
+    const double dy = g_windowHeight - ypos - 1 - g_mouseClickY;
+
+    Matrix4 m;
+    if (g_mouseLClickButton) {
+        m = Matrix4::makeXRotation(-dy) * Matrix4::makeYRotation(dx);
+    }
+    else if (g_mouseRClickButton) {
+        m = Matrix4::makeTranslation(Cvec3(dx, dy, 0) * 0.01);
+    }
+    else if (g_mouseMClickButton) {
+        m = Matrix4::makeTranslation(Cvec3(0, 0, -dy) * 0.01);
+    }
+
+    if (g_mouseClickDown) {
+        g_objectRbt[0] *= m; // Simply right-multiply is WRONG
+    }
+
+	// cursor position 업데이트
+	g_xpos = xpos;
+	g_ypos = ypos;
+    
+    // 마우스 클릭 좌표 업데이트
+
+    g_mouseClickX = xpos;
+    g_mouseClickY = g_windowHeight - ypos - 1;
 }
+
+
 static void initGLFW(int argc, char** argv) {
     if (!glfwInit()) {
         throw std::runtime_error("Failed to initialize GLFW");
